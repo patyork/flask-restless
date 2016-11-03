@@ -25,9 +25,7 @@ from unittest2 import skip
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import Table
 from sqlalchemy import Unicode
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import backref
 from sqlalchemy.orm import relationship
 
@@ -1545,99 +1543,6 @@ class TestDynamicRelationships(ManagerTestBase):
         articles = document['data']
         assert ['1', '2'] == sorted(article['id'] for article in articles)
         assert all(article['type'] == 'article' for article in articles)
-
-
-class TestAssociationProxy(ManagerTestBase):
-    """Tests for getting an object with a relationship using an association
-    proxy.
-
-    """
-
-    def test_association_object(self):
-        """Test for fetching a resource that has a many-to-many relation that
-        uses an association object with an association proxy.
-
-        We serialize an association proxy that proxies a collection of
-        model instances via an association object as a relationship.
-
-        """
-
-        class Article(self.Base):
-            __tablename__ = 'article'
-            id = Column(Integer, primary_key=True)
-            articletags = relationship('ArticleTag')
-            tags = association_proxy('articletags', 'tag',
-                                     creator=lambda tag: ArticleTag(tag=tag))
-
-        class ArticleTag(self.Base):
-            __tablename__ = 'articletag'
-            article_id = Column(Integer, ForeignKey('article.id'),
-                                primary_key=True)
-            tag_id = Column(Integer, ForeignKey('tag.id'), primary_key=True)
-            tag = relationship('Tag')
-
-        class Tag(self.Base):
-            __tablename__ = 'tag'
-            id = Column(Integer, primary_key=True)
-            name = Column(Unicode)
-
-        self.Base.metadata.create_all()
-        self.manager.create_api(Article)
-        self.manager.create_api(Tag)
-
-        article = Article(id=1)
-        tag = Tag(id=1)
-        article.tags = [tag]
-        self.session.add_all([article, tag])
-        self.session.commit()
-
-        response = self.app.get('/api/article/1')
-        document = loads(response.data)
-        article = document['data']
-        tags = article['relationships']['tags']['data']
-        assert ['1'] == sorted(tag['id'] for tag in tags)
-
-    def test_scalar_list(self):
-        """Tests for fetching an association proxy to scalars as a list
-        attribute instead of a link object.
-
-        We serialize an association proxy that proxies a collection of
-        scalar values via an association table as a JSON list.
-
-        """
-
-        class Article(self.Base):
-            __tablename__ = 'article'
-            id = Column(Integer, primary_key=True)
-            tags = relationship('Tag', secondary=lambda: articletags_table)
-            tag_names = association_proxy('tags', 'name',
-                                          creator=lambda s: Tag(name=s))
-
-        class Tag(self.Base):
-            __tablename__ = 'tag'
-            id = Column(Integer, primary_key=True)
-            name = Column(Unicode)
-
-        articletags_table = \
-            Table('articletags', self.Base.metadata,
-                  Column('article_id', Integer, ForeignKey('article.id'),
-                         primary_key=True),
-                  Column('tag_id', Integer, ForeignKey('tag.id'),
-                         primary_key=True))
-
-        self.Base.metadata.create_all()
-        self.manager.create_api(Article)
-
-        article = Article(id=1)
-        article.tag_names = ['foo', 'bar']
-        self.session.add(article)
-        self.session.commit()
-
-        response = self.app.get('/api/article/1')
-        document = loads(response.data)
-        article = document['data']
-        tag_names = sorted(article['attributes']['tag_names'])
-        self.assertEqual(tag_names, ['bar', 'foo'])
 
 
 class TestFlaskSQLAlchemy(FlaskSQLAlchemyTestBase):
