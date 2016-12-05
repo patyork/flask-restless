@@ -464,8 +464,13 @@ class API(APIBase):
         # Convert the dictionary representation into an instance of the
         # model.
         try:
-            instance = self.deserializer.deserialize(document)
-            self.session.add(instance)
+            # Transfor into list
+            if type(document) == type({}):
+                document = [document]
+                
+            for doc in document:
+                instance = self.deserializer.deserialize(doc)
+                self.session.add(instance)
             # Flush all changes to database but do not commit the transaction
             # so that postprocessors have the chance to roll it back
             self.session.flush()
