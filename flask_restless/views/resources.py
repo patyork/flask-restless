@@ -464,6 +464,7 @@ class API(APIBase):
         # Convert the dictionary representation into an instance of the
         # model.
         try:
+            print 'made it here'
             # Transfor into list
             if type(document) == type({}):
                 document = [document]
