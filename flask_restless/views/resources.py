@@ -468,13 +468,21 @@ class API(APIBase):
             # Transfor into list
             if type(document) == type({}):
                 document = [document]
-                
+            
+            
+            print 'made it here1'
+            
             for doc in document:
                 instance = self.deserializer.deserialize(doc)
                 self.session.add(instance)
+                
+            
+            print 'made it here2'
             # Flush all changes to database but do not commit the transaction
             # so that postprocessors have the chance to roll it back
             self.session.flush()
+            
+            print 'made it here3'
         # This also catches subclasses of `DeserializationException`,
         # like ClientGeneratedIDNotAllowed and ConflictingType.
         except DeserializationException as exception:
@@ -486,6 +494,8 @@ class API(APIBase):
         only = self.sparse_fields.get(self.collection_name)
         # Get the dictionary representation of the new instance as it
         # appears in the database.
+        
+        print 'made it here4'
         try:
             result = self.serializer.serialize(instance, only=only)
         except SerializationException as exception:
@@ -499,6 +509,7 @@ class API(APIBase):
         # Provide that URL in the Location header in the response.
         headers = dict(Location=url)
         # Include any requested resources in a compound document.
+        print 'made it here5'
         try:
             included = self.get_all_inclusions(instance)
         except MultipleExceptions as e:
@@ -508,6 +519,7 @@ class API(APIBase):
             # `errors_from_serialization_exception()`.
             return errors_from_serialization_exceptions(e.exceptions,
                                                         included=True)
+        print 'made it here6'
         if included:
             result['included'].extend(included)
         status = 201
