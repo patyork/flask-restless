@@ -473,6 +473,7 @@ class API(APIBase):
             print 'made it here1'
             
             for doc in document:
+                doc['type'] = 'kerasdata'
                 instance = self.deserializer.deserialize(doc)
                 self.session.add(instance)
                 
